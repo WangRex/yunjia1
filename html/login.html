@@ -22,6 +22,7 @@
 			<link rel="stylesheet" href="../assets/css/jeff-part2.css" />
 		<![endif]-->
 		<link rel="stylesheet" href="../assets/css/jeff-rtl.css" />
+		<link rel="stylesheet" href="../assets/css/jquery.gritter.css" />
 
 		<!--[if lte IE 9]>
 		  <link rel="stylesheet" href="../assets/css/jeff-ie.css" />
@@ -54,6 +55,7 @@
 
 							<div class="position-relative">
 								<div id="login-box" class="login-box visible widget-box no-border">
+
 									<div class="widget-body">
 										<div class="widget-main">
 											<h4 class="header blue lighter bigger">
@@ -63,7 +65,7 @@
 
 											<div class="space-6"></div>
 
-											<form>
+											<form id="loginForm">
 												<fieldset>
 													<label class="block clearfix">
 														<span class="block input-icon input-icon-right">
@@ -88,7 +90,7 @@
 															<span class="lbl"> 记住我</span>
 														</label>
 
-														<button type="button" class="width-35 pull-right btn btn-sm btn-primary">
+														<button type="button" id="loginBtn" class="width-35 pull-right btn btn-sm btn-primary">
 															<i class="jeff-icon fa fa-key"></i>
 															<span class="bigger-110">登录</span>
 														</button>
@@ -179,7 +181,7 @@
 															<i class="jeff-icon fa fa-envelope"></i>
 														</span>
 													</label>
-													
+
 													<label class="block clearfix form-group has-info">
 														<span class="block input-icon input-icon-right">
 															<input type="text" class="form-control" placeholder="手机" name="UserMobile" />
@@ -266,6 +268,12 @@
 			</div><!-- /.main-content -->
 		</div><!-- /.main-container -->
 
+<div class="hide">
+	<a href="../html/ajax/#page/index" id="back-to-index" >
+
+		返回首页
+	</a>
+</div>
 		<!-- basic scripts -->
 
 		<!--[if !IE]> -->
@@ -279,6 +287,7 @@
 		<script type="text/javascript">
 			if('ontouchstart' in document.documentElement) document.write("<script src='../assets/js/jquery.mobile.custom.js'>"+"<"+"/script>");
 			document.write("<script src='../assets/js/jquery.validate.js'>"+"<"+"/script>");
+			document.write("<script src='../assets/js/jquery.gritter.js'>"+"<"+"/script>");
 		</script>
 
 		<!-- inline scripts related to this page -->
@@ -321,11 +330,11 @@
 
 			 $('#btn-login-blur').click();
 			});
-			
+
 			jQuery.validator.addMethod("phone", function (value, element) {
 				return this.optional(element) || /^(13[0-9]|14[0-9]|15[0-9]|18[0-9])\d{8}$/.test(value);
 			}, "Enter a valid phone number.");
-			
+
 			$('#registerForm').validate({
 					errorElement: 'div',
 					errorClass: 'help-block',
@@ -351,31 +360,9 @@
 						UserMobile: {
 							required: true,
 							phone: 'required'
-						},
-						url: {
-							required: true,
-							url: true
-						},
-						comment: {
-							required: true
-						},
-						state: {
-							required: true
-						},
-						platform: {
-							required: true
-						},
-						subscription: {
-							required: true
-						},
-						gender: {
-							required: true,
-						},
-						agree: {
-							required: true,
 						}
 					},
-			
+
 					messages: {
 						UserMail: {
 							required: "<span class='red'>Please enter email.</span>",
@@ -384,23 +371,19 @@
 						UserPassword: {
 							required: "Please specify a password.",
 							minlength: "Please specify a secure password."
-						},
-						state: "Please choose state",
-						subscription: "Please choose at least one option",
-						gender: "Please choose gender",
-						agree: "Please accept our policy"
+						}
 					},
-			
-			
+
+
 					highlight: function (e) {
 						$(e).closest('.form-group').removeClass('has-info').addClass('has-error');
 					},
-			
+
 					success: function (e) {
 						$(e).closest('.form-group').removeClass('has-error');//.addClass('has-info');
 						$(e).remove();
 					},
-			
+
 					errorPlacement: function (error, element) {
 						if(element.is('input[type=checkbox]') || element.is('input[type=radio]')) {
 							var controls = element.closest('div[class*="col-"]');
@@ -415,23 +398,25 @@
 						}
 						else error.insertAfter(element.parent());
 					},
-			
+
 					submitHandler: function (form) {
 					},
 					invalidHandler: function (form) {
 					}
 				});
-				
+
 			$('#registerBtn').on('click', function(){
-			
+
 				$.ajax({
 					type: 'post',
 					url:'http://210.83.195.229:90/api/loginapi/CheckUserLoginName',
-					data:{name:$('#registerUserLoginName').val()},
-					async: false, 
+					data:{UserLoginName:$('#registerUserLoginName').val()},
+					async: false,
 					success: function(result){
-					
-						if(result && $('#registerForm').valid()){
+
+						alertMsg('用户名验证',result.Message)
+
+						if(result.Code==1 && $('#registerForm').valid()){
 							var data = {};
 							var dataArr = $('#registerForm').serializeArray();
 							dataArr.forEach(function(d){data[d['name']] = d['value']});
@@ -440,16 +425,48 @@
 								type: 'post',
 								url:'http://210.83.195.229:90/api/loginapi/Register',
 								data:data,
-								async: false, 
+								async: false,
 								success: function(data){
-									console.log(data);
+									$('#back-to-index').get(0).click();
 								}}
 							)
 						}
 					}}
 				)
-			})
-			
+			});
+
+			$('#loginBtn').on('click', function(){
+
+				var data = {};
+				var dataArr = $('#loginForm').serializeArray();
+				dataArr.forEach(function(d){data[d['name']] = d['value']});
+				$.ajax({
+					type: 'post',
+					url:'http://210.83.195.229:90/api/loginapi/Login',
+					data:data,
+					async: false,
+					success: function(data){
+						if(data.Code == 1){
+							$('#back-to-index').get(0).click();
+						}else{
+							alertMsg('登陆失败',data.Message);
+						}
+					}}
+				)
+			});
+
+			function alertMsg(title,msg){
+				$.gritter.add({
+						title: title,
+						text: msg,
+						image:'../assets/avatars/avatar.png',
+						sticky: false,
+						time: 1000,
+						speed:500,
+						position: 'bottom-right',
+						class_name: 'gritter error'//gritter-center
+				});
+			}
 		</script>
 	</body>
 </html>
